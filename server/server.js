@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const { Sequelize, DataTypes } = require('sequelize');
-const BetterSqlite3 = require('better-sqlite3');
+const Database = require('better-sqlite3'); // Direct import
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
@@ -12,32 +12,48 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// =============================================
-// DATABASE CONFIGURATION
-// =============================================
+// ================= DATABASE SETUP =================
 const dbPath = path.join(__dirname, 'database.sqlite');
 
-// Create database file if it doesn't exist
+// Ensure database file exists
 if (!fs.existsSync(dbPath)) {
   fs.writeFileSync(dbPath, '');
   console.log('Created new SQLite database file');
 }
 
-// Configure Sequelize to use better-sqlite3
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: dbPath,
-  dialectModule: BetterSqlite3, // Critical for Render
-  logging: false,
-  define: {
-    freezeTableName: true,
-    timestamps: false
+// Custom ConnectionManager to force better-sqlite3
+class BetterSqliteConnectionManager extends Sequelize.ConnectionManager {
+  constructor(dialect, sequelize) {
+    super(dialect, sequelize);
+    this.lib = Database;
   }
+
+  async connect(config) {
+    return new this.lib(config.storage, {
+      verbose: console.log
+    });
+  }
+}
+
+// Custom Dialect
+class BetterSqliteDialect extends Sequelize.Dialect {
+  static ConnectionManager = BetterSqliteConnectionManager;
+
+  constructor(sequelize) {
+    super(sequelize);
+    this.sequelize = sequelize;
+    this.connectionManager = new this.constructor.ConnectionManager(this, sequelize);
+  }
+}
+
+// Initialize Sequelize with our custom dialect
+const sequelize = new Sequelize({
+  dialectModule: BetterSqliteDialect,
+  storage: dbPath,
+  logging: false
 });
 
-// =============================================
-// MODELS
-// =============================================
+// ================= MODELS =================
 const Admin = sequelize.define('Admin', {
   username: {
     type: DataTypes.STRING,
@@ -61,7 +77,7 @@ const Note = sequelize.define('Note', {
   },
   color: {
     type: DataTypes.STRING,
-    defaultValue: '#ffff99' // Yellow
+    defaultValue: '#ffff99'
   },
   positionX: {
     type: DataTypes.INTEGER,
@@ -81,25 +97,9 @@ const Note = sequelize.define('Note', {
   }
 });
 
-// =============================================
-// RELATIONSHIPS
-// =============================================
+// ================= RELATIONSHIPS =================
 Admin.hasMany(Note);
 Note.belongsTo(Admin);
-
-// =============================================
-// AUTH MIDDLEWARE
-// =============================================
-const authenticateAdmin = (req, res, next) => {
-  const token = req.headers['authorization'];
-  if (!token) return res.sendStatus(401);
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, admin) => {
-    if (err) return res.sendStatus(403);
-    req.admin = admin;
-    next();
-  });
-};
 
 // =============================================
 // ROUTES
@@ -178,37 +178,34 @@ app.delete('/api/notes/:id', async (req, res) => {
   }
 });
 
-// =============================================
-// SERVER INITIALIZATION
-// =============================================
+// ================= SERVER INIT =================
 (async () => {
-  try {
-    // Test database connection
-    await sequelize.authenticate();
-    console.log('Database connection established');
-    
-    // Sync models
-    await sequelize.sync();
-    console.log('Database synchronized');
-    
-    // Create default admin if none exists
-    const adminCount = await Admin.count();
-    if (adminCount === 0 && process.env.ADMIN_HASH) {
-      await Admin.create({
-        username: process.env.ADMIN_USERNAME,
-        password: process.env.ADMIN_HASH
+    try {
+      // Test connection
+      await sequelize.authenticate();
+      console.log('Database connection established');
+      
+      // Sync models
+      await sequelize.sync();
+      console.log('Database synchronized');
+      
+      // Create default admin
+      const adminCount = await Admin.count();
+      if (adminCount === 0 && process.env.ADMIN_HASH) {
+        await Admin.create({
+          username: process.env.ADMIN_USERNAME,
+          password: process.env.ADMIN_HASH
+        });
+        console.log('Default admin created');
+      }
+      
+      // Start server
+      const PORT = process.env.PORT || 3001;
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
       });
-      console.log('Default admin account created');
+    } catch (error) {
+      console.error('Initialization failed:', error);
+      process.exit(1);
     }
-    
-    // Start server
-    const PORT = process.env.PORT || 3001;
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Admin login: ${process.env.ADMIN_USERNAME}`);
-    });
-  } catch (error) {
-    console.error('Server initialization failed:', error);
-    process.exit(1);
-  }
-})();
+  })();
