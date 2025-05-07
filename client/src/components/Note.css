@@ -1,0 +1,85 @@
+.note {
+    position: absolute;
+    width: 250px;
+    min-height: 200px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1;
+  }
+  
+  .note-header {
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.1);
+    cursor: move;
+  }
+  
+  .note-title {
+    width: 100%;
+    padding: 5px;
+    border: none;
+    background: transparent;
+    font-weight: bold;
+    font-size: 1rem;
+  }
+  
+  .note-title:focus {
+    outline: none;
+  }
+  
+  .note-content {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    resize: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  
+  .note-content:focus {
+    outline: none;
+  }
+  
+  .note-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .color-palette {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .color-palette button {
+    width: 20px;
+    height: 20px;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+  }
+  
+  .color-palette button:hover {
+    transform: scale(1.1);
+  }
+  
+  .delete-btn {
+    padding: 4px 8px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  
+  .delete-btn:hover {
+    background-color: #d32f2f;
+  }

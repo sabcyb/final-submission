@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import './Login.css';
 
 export default function Login({ setToken }) {
   const [username, setUsername] = useState('');
@@ -11,19 +12,22 @@ export default function Login({ setToken }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:3001/api/admin/login', { username, password });
-      localStorage.setItem('token', res.data.token);
-      setToken(res.data.token);
+      const { data } = await axios.post('http://localhost:3001/api/admin/login', { 
+        username, 
+        password 
+      });
+      localStorage.setItem('token', data.token);
+      setToken(data.token);
       navigate('/');
     } catch (err) {
-      setError('Invalid credentials');
+      setError('Invalid admin credentials');
     }
   };
 
   return (
     <div className="login-container">
-      <h2>Admin Login</h2>
-      {error && <p className="error">{error}</p>}
+      <h2>Admin Portal</h2>
+      {error && <div className="error-message">{error}</div>}
       <form onSubmit={handleSubmit}>
         <input
           type="text"
