@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const { Sequelize, DataTypes } = require('sequelize');
+//const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
@@ -10,11 +10,18 @@ app.use(cors());
 app.use(express.json());
 
 // Database setup
+const Sequelize = require('sequelize');
+const path = require('path');
+
 const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: './database.sqlite',
-    dialectModule: require('better-sqlite3')
-  });
+  dialect: 'sqlite',
+  storage: path.join(__dirname, 'database.sqlite'),
+  dialectModule: require('better-sqlite3'),
+  logging: false,
+  define: {
+    freezeTableName: true
+  }
+});
 
 // Models
 const Admin = sequelize.define('Admin', {
