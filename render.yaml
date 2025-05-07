@@ -2,7 +2,7 @@ services:
   - type: web
     name: post-it-backend
     runtime: node
-    buildCommand: cd server && npm install
+    buildCommand: cd server && npm install --force && npm rebuild better-sqlite3 --build-from-source
     startCommand: node ./server/server.js
     envVars:
       - key: ADMIN_USERNAME
