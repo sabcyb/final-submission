@@ -2,7 +2,7 @@ services:
   - type: web
     name: post-it-backend
     runtime: node
-    buildCommand: npm install
+    buildCommand: cd server && npm install
     startCommand: node server.js
     envVars:
       - key: ADMIN_USERNAME
