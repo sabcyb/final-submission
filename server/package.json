@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "preinstall": "npm install -g node-gyp",
-    "install": "npm rebuild bcrypt --build-from-source",
+    "install": "npm rebuild bcrypt --build-from-source"
   },
   "keywords": [],
   "author": "",
