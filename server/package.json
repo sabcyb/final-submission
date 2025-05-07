@@ -2,10 +2,14 @@
   "name": "server",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+      "node": "18.x"
+    },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "install": "npm rebuild bcrypt --build-from-source"
+    "preinstall": "npm install -g node-gyp",
+    "install": "npm rebuild bcrypt --build-from-source",
   },
   "keywords": [],
   "author": "",
