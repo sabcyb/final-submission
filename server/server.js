@@ -12,28 +12,32 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database Configuration
+// =============================================
+// DATABASE CONFIGURATION
+// =============================================
 const dbPath = path.join(__dirname, 'database.sqlite');
 
-// Ensure database file exists
+// Create database file if it doesn't exist
 if (!fs.existsSync(dbPath)) {
-  fs.closeSync(fs.openSync(dbPath, 'w'));
+  fs.writeFileSync(dbPath, '');
   console.log('Created new SQLite database file');
 }
 
+// Configure Sequelize to use better-sqlite3
 const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: dbPath,
+  dialectModule: BetterSqlite3, // Critical for Render
   logging: false,
-  dialectOptions: {
-    mode: BetterSqlite3.OPEN_READWRITE | BetterSqlite3.OPEN_CREATE,
+  define: {
+    freezeTableName: true,
+    timestamps: false
   }
 });
 
-// Force Sequelize to use better-sqlite3
-sequelize.connectionManager.lib = BetterSqlite3;
-
-// Admin Model
+// =============================================
+// MODELS
+// =============================================
 const Admin = sequelize.define('Admin', {
   username: {
     type: DataTypes.STRING,
@@ -44,9 +48,8 @@ const Admin = sequelize.define('Admin', {
     type: DataTypes.STRING,
     allowNull: false
   }
-}, { timestamps: false });
+});
 
-// Note Model
 const Note = sequelize.define('Note', {
   title: {
     type: DataTypes.STRING,
@@ -58,7 +61,7 @@ const Note = sequelize.define('Note', {
   },
   color: {
     type: DataTypes.STRING,
-    defaultValue: '#ffff99'
+    defaultValue: '#ffff99' // Yellow
   },
   positionX: {
     type: DataTypes.INTEGER,
@@ -76,13 +79,17 @@ const Note = sequelize.define('Note', {
     type: DataTypes.INTEGER,
     defaultValue: 200
   }
-}, { timestamps: false });
+});
 
-// Relationships
+// =============================================
+// RELATIONSHIPS
+// =============================================
 Admin.hasMany(Note);
 Note.belongsTo(Admin);
 
-// Auth Middleware
+// =============================================
+// AUTH MIDDLEWARE
+// =============================================
 const authenticateAdmin = (req, res, next) => {
   const token = req.headers['authorization'];
   if (!token) return res.sendStatus(401);
@@ -94,21 +101,32 @@ const authenticateAdmin = (req, res, next) => {
   });
 };
 
-// Routes
-app.post('/api/admin/login', async (req, res) => {
-  const { username, password } = req.body;
-  
-  if (username !== process.env.ADMIN_USERNAME || 
-      !bcrypt.compareSync(password, process.env.ADMIN_HASH)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
+// =============================================
+// ROUTES
+// =============================================
 
-  const token = jwt.sign({ id: 1 }, process.env.JWT_SECRET, { expiresIn: '8h' });
-  res.json({ token });
+// Admin Login
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (username !== process.env.ADMIN_USERNAME || 
+        !bcrypt.compareSync(password, process.env.ADMIN_HASH)) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ id: 1 }, process.env.JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Protected Routes
-app.get('/api/notes', authenticateAdmin, async (req, res) => {
+// Protected Note Routes
+app.use('/api/notes', authenticateAdmin);
+
+// Get all notes
+app.get('/api/notes', async (req, res) => {
   try {
     const notes = await Note.findAll({ where: { AdminId: req.admin.id } });
     res.json(notes);
@@ -117,7 +135,8 @@ app.get('/api/notes', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/notes', authenticateAdmin, async (req, res) => {
+// Create new note
+app.post('/api/notes', async (req, res) => {
   try {
     const note = await Note.create({ 
       ...req.body, 
@@ -129,7 +148,8 @@ app.post('/api/notes', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/notes/:id', authenticateAdmin, async (req, res) => {
+// Update note
+app.put('/api/notes/:id', async (req, res) => {
   try {
     await Note.update(req.body, { 
       where: { 
@@ -143,7 +163,8 @@ app.put('/api/notes/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-app.delete('/api/notes/:id', authenticateAdmin, async (req, res) => {
+// Delete note
+app.delete('/api/notes/:id', async (req, res) => {
   try {
     await Note.destroy({ 
       where: { 
@@ -157,16 +178,20 @@ app.delete('/api/notes/:id', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Initialize Database and Server
+// =============================================
+// SERVER INITIALIZATION
+// =============================================
 (async () => {
   try {
+    // Test database connection
     await sequelize.authenticate();
     console.log('Database connection established');
     
+    // Sync models
     await sequelize.sync();
     console.log('Database synchronized');
     
-    // Create default admin if not exists
+    // Create default admin if none exists
     const adminCount = await Admin.count();
     if (adminCount === 0 && process.env.ADMIN_HASH) {
       await Admin.create({
@@ -176,12 +201,14 @@ app.delete('/api/notes/:id', authenticateAdmin, async (req, res) => {
       console.log('Default admin account created');
     }
     
+    // Start server
     const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      console.log(`Admin login: ${process.env.ADMIN_USERNAME}`);
     });
   } catch (error) {
-    console.error('Initialization failed:', error);
+    console.error('Server initialization failed:', error);
     process.exit(1);
   }
 })();
