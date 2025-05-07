@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import axios from 'axios';
 import './Note.css';
 
-const COLORS = ['#ff8888', '#88ff88', '#8888ff', '#ffff99'];
+const COLORS = ['#ff8888', '#88ff88', '#8888ff', '#ffff88'];
 
 export default function Note({ note, onUpdate, onDelete }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -40,8 +41,6 @@ export default function Note({ note, onUpdate, onDelete }) {
       className="note"
       style={{
         backgroundColor: note.color,
-        width: `${note.width}px`,
-        height: `${note.height}px`,
         transform: `translate(${position.x}px, ${position.y}px)`,
         cursor: isDragging ? 'grabbing' : 'move'
       }}
@@ -60,7 +59,6 @@ export default function Note({ note, onUpdate, onDelete }) {
         value={note.content}
         onChange={(e) => onUpdate(note.id, { content: e.target.value })}
         className="note-content"
-        placeholder="Write your note here..."
       />
       
       <div className="note-footer">
@@ -70,16 +68,14 @@ export default function Note({ note, onUpdate, onDelete }) {
               key={color}
               style={{ backgroundColor: color }}
               onClick={() => onUpdate(note.id, { color })}
-              title={`Set color to ${color}`}
             />
           ))}
         </div>
         <button 
           className="delete-btn"
           onClick={() => onDelete(note.id)}
-          title="Delete note"
         >
-          🗑️
+          Delete
         </button>
       </div>
     </div>

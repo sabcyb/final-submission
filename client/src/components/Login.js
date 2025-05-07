@@ -26,7 +26,7 @@ export default function Login({ setToken }) {
 
   return (
     <div className="login-container">
-      <h2>Admin Login</h2>
+      <h2>Log In Page</h2>
       {error && <div className="error-message">{error}</div>}
       <form onSubmit={handleSubmit}>
         <input
