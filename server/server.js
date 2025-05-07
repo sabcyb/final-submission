@@ -11,10 +11,10 @@ app.use(express.json());
 
 // Database setup
 const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: './database.sqlite',
-  logging: false
-});
+    dialect: 'sqlite',
+    storage: './database.sqlite',
+    dialectModule: require('better-sqlite3')
+  });
 
 // Models
 const Admin = sequelize.define('Admin', {
