@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import Note from './Note';
 import './NoteBoard.css';
 
-export default function NoteBoard({ token }) {
+export default function NoteBoard({ token, onLogout }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchNotes();
@@ -61,13 +63,24 @@ export default function NoteBoard({ token }) {
     }
   };
 
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('token');
+      onLogout();
+      navigate('/login');
+    }
+  };
+
   if (loading) return <div className="loading">Loading notes...</div>;
 
   return (
     <div className="note-board-container">
       <div className="toolbar">
+        <button onClick={handleLogout} className="logout-btn">
+          Logout
+        </button>
         <button onClick={createNote} className="add-note-btn">
-          + Add New Note
+          + Add Note
         </button>
       </div>
       <div className="note-board">

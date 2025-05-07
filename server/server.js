@@ -16,20 +16,19 @@ const sequelize = new Sequelize({
   logging: false
 });
 
-// Admin Model
+// Models
 const Admin = sequelize.define('Admin', {
   username: { type: DataTypes.STRING, unique: true },
   password: DataTypes.STRING
 }, { timestamps: false });
 
-// Note Model
 const Note = sequelize.define('Note', {
   title: { type: DataTypes.STRING, defaultValue: 'New Note' },
   content: { type: DataTypes.TEXT, defaultValue: '' },
   color: { type: DataTypes.STRING, defaultValue: '#ffff99' },
   positionX: { type: DataTypes.INTEGER, defaultValue: 100 },
   positionY: { type: DataTypes.INTEGER, defaultValue: 100 },
-  width: { type: DataTypes.INTEGER, defaultValue: 200 },
+  width: { type: DataTypes.INTEGER, defaultValue: 250 },
   height: { type: DataTypes.INTEGER, defaultValue: 200 }
 }, { timestamps: false });
 
@@ -52,7 +51,6 @@ const authenticateAdmin = (req, res, next) => {
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body;
   
-  // Verify hardcoded admin credentials
   if (username !== process.env.ADMIN_USERNAME || 
       !await bcrypt.compare(password, process.env.ADMIN_HASH)) {
     return res.status(401).json({ error: 'Invalid credentials' });
@@ -87,13 +85,10 @@ app.delete('/api/notes/:id', authenticateAdmin, async (req, res) => {
 (async () => {
   await sequelize.sync();
   
-  // Create default admin if not exists
-  const adminExists = await Admin.findOne();
-  if (!adminExists) {
-    const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
+  if (!await Admin.findOne()) {
     await Admin.create({ 
       username: process.env.ADMIN_USERNAME,
-      password: hash
+      password: process.env.ADMIN_HASH
     });
     console.log('Default admin created');
   }

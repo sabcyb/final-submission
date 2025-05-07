@@ -1,36 +1,51 @@
 .note-board-container {
-    padding: 20px;
-    height: 100vh;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .toolbar {
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
-  
-  .add-note-btn {
-    padding: 0.8rem 1.5rem;
-    background-color: #4a6fa5;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-  }
-  
-  .add-note-btn:hover {
-    background-color: #3a5a8c;
-  }
-  
-  .note-board {
-    flex: 1;
-    position: relative;
-    background-color: #f0f0f0;
-    border-radius: 8px;
-    overflow: hidden;
-  }
+  padding: 20px;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.logout-btn {
+  padding: 0.8rem 1.5rem;
+  background-color: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+  background-color: #d32f2f;
+}
+
+.add-note-btn {
+  padding: 0.8rem 1.5rem;
+  background-color: #4a6fa5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.add-note-btn:hover {
+  background-color: #3a5a8c;
+}
+
+.note-board {
+  flex: 1;
+  position: relative;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
