@@ -1,64 +1,84 @@
 require('dotenv').config();
 const express = require('express');
-const { Sequelize, DataTypes } = require('sequelize'); // Fixed import
+const { Sequelize, DataTypes } = require('sequelize');
+const BetterSqlite3 = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database setup with better-sqlite3
+// Database Configuration
+const dbPath = path.join(__dirname, 'database.sqlite');
+
+// Ensure database file exists
+if (!fs.existsSync(dbPath)) {
+  fs.closeSync(fs.openSync(dbPath, 'w'));
+  console.log('Created new SQLite database file');
+}
+
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, 'database.sqlite'),
-  dialectModule: require('better-sqlite3'),
-  logging: false
+  storage: dbPath,
+  logging: false,
+  dialectOptions: {
+    mode: BetterSqlite3.OPEN_READWRITE | BetterSqlite3.OPEN_CREATE,
+  }
 });
 
-// Admin Model - Corrected DataTypes usage
-const Admin = sequelize.define('Admin', {
-  username: { 
-    type: DataTypes.STRING, 
-    unique: true 
-  },
-  password: DataTypes.STRING
-}, { timestamps: false });
+// Force Sequelize to use better-sqlite3
+sequelize.connectionManager.lib = BetterSqlite3;
 
-// Note Model - Corrected DataTypes usage
-const Note = sequelize.define('Note', {
-  title: { 
-    type: DataTypes.STRING, 
-    defaultValue: 'New Note' 
+// Admin Model
+const Admin = sequelize.define('Admin', {
+  username: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: false
   },
-  content: { 
-    type: DataTypes.TEXT, 
-    defaultValue: '' 
-  },
-  color: { 
-    type: DataTypes.STRING, 
-    defaultValue: '#ffff99' 
-  },
-  positionX: { 
-    type: DataTypes.INTEGER, 
-    defaultValue: 100 
-  },
-  positionY: { 
-    type: DataTypes.INTEGER, 
-    defaultValue: 100 
-  },
-  width: { 
-    type: DataTypes.INTEGER, 
-    defaultValue: 250 
-  },
-  height: { 
-    type: DataTypes.INTEGER, 
-    defaultValue: 200 
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false
   }
 }, { timestamps: false });
 
+// Note Model
+const Note = sequelize.define('Note', {
+  title: {
+    type: DataTypes.STRING,
+    defaultValue: 'New Note'
+  },
+  content: {
+    type: DataTypes.TEXT,
+    defaultValue: ''
+  },
+  color: {
+    type: DataTypes.STRING,
+    defaultValue: '#ffff99'
+  },
+  positionX: {
+    type: DataTypes.INTEGER,
+    defaultValue: 100
+  },
+  positionY: {
+    type: DataTypes.INTEGER,
+    defaultValue: 100
+  },
+  width: {
+    type: DataTypes.INTEGER,
+    defaultValue: 250
+  },
+  height: {
+    type: DataTypes.INTEGER,
+    defaultValue: 200
+  }
+}, { timestamps: false });
+
+// Relationships
 Admin.hasMany(Note);
 Note.belongsTo(Admin);
 
@@ -88,48 +108,80 @@ app.post('/api/admin/login', async (req, res) => {
 });
 
 // Protected Routes
-app.use('/api/notes', authenticateAdmin);
-
-app.get('/api/notes', async (req, res) => {
-  const notes = await Note.findAll({ where: { AdminId: req.admin.id } });
-  res.json(notes);
+app.get('/api/notes', authenticateAdmin, async (req, res) => {
+  try {
+    const notes = await Note.findAll({ where: { AdminId: req.admin.id } });
+    res.json(notes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.post('/api/notes', async (req, res) => {
-  const note = await Note.create({ ...req.body, AdminId: req.admin.id });
-  res.json(note);
+app.post('/api/notes', authenticateAdmin, async (req, res) => {
+  try {
+    const note = await Note.create({ 
+      ...req.body, 
+      AdminId: req.admin.id 
+    });
+    res.status(201).json(note);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.put('/api/notes/:id', async (req, res) => {
-  await Note.update(req.body, { where: { id: req.params.id } });
-  res.json({ message: 'Note updated' });
+app.put('/api/notes/:id', authenticateAdmin, async (req, res) => {
+  try {
+    await Note.update(req.body, { 
+      where: { 
+        id: req.params.id,
+        AdminId: req.admin.id 
+      } 
+    });
+    res.json({ message: 'Note updated' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.delete('/api/notes/:id', async (req, res) => {
-  await Note.destroy({ where: { id: req.params.id } });
-  res.json({ message: 'Note deleted' });
+app.delete('/api/notes/:id', authenticateAdmin, async (req, res) => {
+  try {
+    await Note.destroy({ 
+      where: { 
+        id: req.params.id,
+        AdminId: req.admin.id 
+      } 
+    });
+    res.json({ message: 'Note deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// Initialize
+// Initialize Database and Server
 (async () => {
   try {
     await sequelize.authenticate();
+    console.log('Database connection established');
+    
     await sequelize.sync();
+    console.log('Database synchronized');
     
     // Create default admin if not exists
-    const adminExists = await Admin.findOne();
-    if (!adminExists && process.env.ADMIN_HASH) {
-      await Admin.create({ 
+    const adminCount = await Admin.count();
+    if (adminCount === 0 && process.env.ADMIN_HASH) {
+      await Admin.create({
         username: process.env.ADMIN_USERNAME,
         password: process.env.ADMIN_HASH
       });
-      console.log('Default admin created');
+      console.log('Default admin account created');
     }
-
-    app.listen(process.env.PORT || 3001, () => 
-      console.log(`Server running on port ${process.env.PORT || 3001}`)
-    );
+    
+    const PORT = process.env.PORT || 3001;
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   } catch (error) {
-    console.error('Database connection failed:', error);
+    console.error('Initialization failed:', error);
+    process.exit(1);
   }
 })();
