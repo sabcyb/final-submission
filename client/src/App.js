@@ -4,6 +4,7 @@ import Login from './components/Login';
 import NoteBoard from './components/NoteBoard';
 import './App.css';
 
+
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
 
