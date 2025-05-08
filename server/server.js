@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const { Sequelize, DataTypes } = require('sequelize');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 
@@ -49,11 +49,6 @@ const authenticateAdmin = (req, res, next) => {
 };
 
 // Routes
-// server checking
-app.get("/", (req,res)=>{
-  res.send("Welcome to Server Backend");
-});
-
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body;
   
