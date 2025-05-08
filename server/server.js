@@ -49,6 +49,11 @@ const authenticateAdmin = (req, res, next) => {
 };
 
 // Routes
+// server checking
+app.get("/", (req,res)=>{
+  res.send("Welcome to Server Backend");
+});
+
 app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body;
   
