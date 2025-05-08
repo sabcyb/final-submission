@@ -8,11 +8,12 @@ export default function Login({ setToken }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const address = "https://p20kpj74-3001.euw.devtunnels.ms/"
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await axios.post('http://localhost:3001/api/admin/login', { 
+      const { data } = await axios.post(address+'api/admin/login', { 
         username, 
         password 
       });

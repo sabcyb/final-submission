@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import Note from './Note';
 import './NoteBoard.css';
 
+const address = "https://p20kpj74-3001.euw.devtunnels.ms/"
+
 export default function NoteBoard({ token, onLogout }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ export default function NoteBoard({ token, onLogout }) {
 
   const fetchNotes = async () => {
     try {
-      const { data } = await axios.get('http://localhost:3001/api/notes', {
+      const { data } = await axios.get(address+'api/notes', {
         headers: { Authorization: token }
       });
       setNotes(data);
@@ -27,7 +29,7 @@ export default function NoteBoard({ token, onLogout }) {
 
   const createNote = async () => {
     try {
-      const { data } = await axios.post('http://localhost:3001/api/notes', {
+      const { data } = await axios.post(address+'api/notes', {
         title: 'New Note',
         content: '',
         positionX: Math.floor(Math.random() * 300),
@@ -43,7 +45,7 @@ export default function NoteBoard({ token, onLogout }) {
 
   const updateNote = async (id, updates) => {
     try {
-      await axios.put(`http://localhost:3001/api/notes/${id}`, updates, {
+      await axios.put(`${address}api/notes/${id}`, updates, {
         headers: { Authorization: token }
       });
       setNotes(notes.map(note => note.id === id ? { ...note, ...updates } : note));
@@ -54,7 +56,7 @@ export default function NoteBoard({ token, onLogout }) {
 
   const deleteNote = async (id) => {
     try {
-      await axios.delete(`http://localhost:3001/api/notes/${id}`, {
+      await axios.delete(`${address}api/notes/${id}`, {
         headers: { Authorization: token }
       });
       setNotes(notes.filter(note => note.id !== id));
