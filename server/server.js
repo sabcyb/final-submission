@@ -103,5 +103,5 @@ app.delete('/api/notes/:id', authenticateAdmin, async (req, res) => {
     console.log('Default admin created');
   }
 
-  app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+  app.listen(3001, () => console.log('Server running on http://localhost:3001'));
 })();
